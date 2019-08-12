@@ -31,7 +31,7 @@
 <li><a href="#network-events">Network events</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#other-pieces"><strong><em>Other pieces</em></strong></a><ul>
+<li><a href="#using-the-model"><strong><em>Using the Model</em></strong></a><ul>
 <li><a href="#initializing-the-network">Initializing the network</a></li>
 <li><a href="#running-the-model-sim-runner">Running the model (sim runner)</a></li>
 <li><a href="#getting-information-from-the-network">Getting information from the network</a></li>
@@ -47,67 +47,68 @@
 </nav>
 <h1 id="conceptual-overview"><strong><em>Conceptual Overview</em></strong></h1>
 <h2 id="nodes">Nodes</h2>
-<p>A node represents one agent in the model. This can be anything representable by data. Commonly, nodes in a network-based ABM represent people, animals, or computers (hosts).</p>
-<p>Nodes have attributes. An attribute is something that can vary between nodes and represents something meaningfully different among individual nodes. For a human in a disease-related model, some attributes might be isInfected (a boolean), age (an integer), or chanceToInfectWhenInteractingWithAnotherPerson (a real number [0,1]). Prefer descriptive adjective phrases when naming attributes.</p>
-<p>Nodes also have events, which will be described later.</p>
+<p>A node is an object representing one agent in the model. Examples are a person, animal, country, or computer.</p>
+<p>Nodes have attributes. An attribute is a trait that varies among nodes, usually numerical or boolean. Examples are ageInDays, isDead, or chanceToInfect.</p>
+<p>Nodes also have events, which are described in <a href="#node-events">a later section</a>.</p>
 <h2 id="the-network">The Network</h2>
-<p>The network represents the sets of nodes and edge and how nodes interact. Networks can have various shapes and details, handled when initializing the network. Global information such as time is also stored by the network.</p>
-<p>Networks have two types of events (network and edge).</p>
+<p>The network is an object representing the set of nodes in the model and how they interact. Global information such as time may also be stored by the network.</p>
+<p>The network object stores the list of nodes and list of sets in the model.</p>
+<p>Networks have two types of events, <a href="#network-events">network</a> and <a href="#edge-events">edge</a>.</p>
 <h2 id="events">Events</h2>
 <p>Each timestep (which can represent any unit of time), some events may happen according to defined probabilities.</p>
-<p>The order of event execution per timestep is node (for each node), network, edge. Within these types, execution order is random.</p>
+<p>All events may have preconditions that must be met for the event to occur.</p>
+<p>Node events occur first, then network, then edge. Within these three types, order is random.</p>
 <h4 id="node-events">Node events</h4>
-<p>Node events are events that affect a single node, executed by that node. Node events may have indirect effects across the entire network, but may not directly modify the attributes of the network or of other nodes. Some examples of node events in a model of disease among people who share needles are spontaneousHostClearance, needleClearance (representing a needle exchange program), and death.</p>
-<p>Each event has a probability (0,1] of it occuring each timestep. Events may have preconditions that must be met for the event to execute (e.g. a node must have a disease to die of that disease, a node must be alive to use a needle exchange program).</p>
-<p>Events within each node are executed in a random order. The order in which nodes are processed is arbitrary because node events may not affect other nodes.</p>
+<p>Node events affect exactly one node. When executing a node event, a node may not access or modify the attributes of other nodes. Some examples of node events are clearInfection, injectDrug, or die.</p>
+<p>Both the order in which nodes are processed and the order in which node events are executed per edge are random.</p>
 <h4 id="edge-events">Edge events</h4>
-<p>Edge events are events that affect or require information from exactly two nodes. Edge events may modify the attributes of only the affected nodes. Some examples of edge events are shareInformation, giveItem, and infectOther. Edge events may be symmetric or asymmetric (i.e. affecting both nodes in the same way (two-way transfer of information) or different ways (an item is taken from one node to give to the other)). Asymmetric events don’t necessarily need to modify the attributes of both nodes, for example infectOther may not modify the ‘infecting’ node.</p>
-<p>Edge events may also have probabilities and preconditions.</p>
+<p>Edge events modify and/or require information from exactly two nodes. Edge events do not have to modify both nodes in the same way, or modify both nodes at all. Some examples of edge events are shareInformation, giveItem, and infectOther.</p>
 <p>Both the order in which edges are processed and the order in which edge events are executed per edge are random.</p>
 <h4 id="network-events">Network events</h4>
-<p>Network events are events that change the sets of nodes and edges that make up the network. Network events may require information from nodes and may modify the attributes of nodes (but this most often can and should be avoided). Some examples of network events are nodeCreation, edgeCreation, and edgeRemoval. nodeRemoval (for example if the node is dead) should generally not be done as it removes useful information. Instead, make not being dead a precondition where needed.</p>
-<p>Network events may also have probabilities and preconditions (such as a number of living nodes or total edges to aim for). If there are strict requirements, such as a constant number of edges, network events may be executed deterministically as needed.</p>
-<p>The order in which network events are executed is random.</p>
-<h1 id="other-pieces"><strong><em>Other pieces</em></strong></h1>
+<p>Network events modify the composition of the network by changing its sets of nodes and edges. Network events may require information from nodes and may modify the attributes of nodes, but this should be avoided if possible. Some examples of network events are nodeCreation, edgeCreation, and edgeRemoval.</p>
+<p>Nodes should never be removed from the network. Instead, make not being dead (or the model’s equivalent) a precondition as needed.</p>
+<p>If there are strict requirements on the network, such as a constant number of edges or nodes, use network events with a probability of one and a precondition of not meeting the requirements.</p>
+<h1 id="using-the-model"><strong><em>Using the Model</em></strong></h1>
 <h2 id="initializing-the-network">Initializing the network</h2>
 <p>The simplest case of network creation involves executing the node creation network event a number of times then the edge creation network event a number of times.</p>
-<p>More complex networks can be constructed using conditional or specific edge or node creation. For example, choose two nodes from the set that has a certain attribute and create an edge between them.</p>
+<p>More complex networks can be constructed using conditional or specific edge or node creation. For example, choosing two nodes from the set that has a certain attribute and create an edge between them.</p>
 <h2 id="running-the-model-sim-runner">Running the model (sim runner)</h2>
-<p>The sim runner is a program which creates a network, runs for a number of timesteps, then displays information about the network.</p>
+<p>The sim runner is a driver class/program which creates a network, runs for a number of timesteps, then displays information about the network.</p>
 <h2 id="getting-information-from-the-network">Getting information from the network</h2>
 <p>The network class may have functions which print or return information about the network. This information is the useful ‘output’ of the simulation.</p>
 <p>The node class may also have similar functions, but will most likely only be useful for debugging.</p>
 <h1 id="general-implementation-checklist"><strong><em>General Implementation Checklist</em></strong></h1>
 <h2 id="node-class">Node class</h2>
 <ul>
-<li>Node attributes as instance variables</li>
-<li>The constructor sets attributes to supplied values. Some values may always be set the same way (age = 0; isDead = False).</li>
-<li>Node events timestep function</li>
-<li>Node event functions, mostly with no arguments and void return. Idempotent if applicable.</li>
-<li>Helper functions for edge and network events, may just provide information or modify attributes</li>
-<li>Some kind of toString or debug printing function</li>
+<li>Node attributes as instance variables.</li>
+<li>A constructor which sets attributes to values supplied as arguments. Some values may always be initialized the same way (age = 0; isDead = False).</li>
+<li>The node events per timestep function.</li>
+<li>Node event functions with mostly no arguments and void return. They should be idempotent if applicable.</li>
+<li>Helper functions for edge and network events as needed. They may just provide information or modify attributes.</li>
+<li>Optionally, a debug function to print node information.</li>
 </ul>
 <h2 id="network-class">Network class</h2>
 <ul>
-<li>Lists/arrays of nodes and edges. If edges have weights, represent as a two-item array of [edge, weight] in the edges list/array</li>
-<li>Store edges as unordered sets</li>
-<li>Constructor populates lists/arrays of nodes and edges</li>
-<li>Network and edge events timestep function</li>
-<li>Network event functions, mostly with no arguments and void return</li>
-<li>Edge event functions. Prefer calling per-node applier functions for anything that doesn’t require both nodes</li>
+<li>Ordered list of nodes.</li>
+<li>Ordered list of edges. Each edge is an unordered two-item set containing the indices of the nodes linked by the edge.</li>
+<li>A constructor populates lists of nodes and edges.</li>
+<li>Network and edge events per timestep function.</li>
+<li>Network event functions with mostly no arguments and void return. These will mostly not be idempotent.</li>
+<li>Edge event functions with mostly no arguments and void return.</li>
 <li>Function to print useful results and/or debug information</li>
 </ul>
 <h2 id="sim-runner-class">Sim runner class</h2>
 <ul>
-<li>Has the <code>main</code> function</li>
-<li>Initializes a network object</li>
-<li>Calls the timestep function of the network a number of times</li>
-<li>Displays results</li>
+<li>The main/driver function, which:
+<ul>
+<li>Instantiates a network object.</li>
+<li>Calls the timestep function of the network a number of times.</li>
+<li>Displays results.</li>
+</ul></li>
 </ul>
 <h2 id="probabilities-class-or-file">Probabilities class or file</h2>
 <ul>
-<li>Prefer to not use a class if possible</li>
-<li>Contains all probability values needed in one place for easy adjustment</li>
+<li>Named variables for each probability needed in the model.</li>
 </ul>
 <h1 id="examples"><strong><em>Examples</em></strong></h1>
 <ul>
