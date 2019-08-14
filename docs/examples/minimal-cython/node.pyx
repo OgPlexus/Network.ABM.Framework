@@ -1,11 +1,11 @@
 # built-in rng module
 import random
 
-# probabilities file defined later
+# defined probabilities file
 import probabilities
 
 # class definition and attributes
-cdef class node:
+cdef class Node:
     cdef bint isHealthy
     cdef int ageDays
     cdef float infectionChance
@@ -28,7 +28,7 @@ cdef class node:
             return
 
         # age is measured in timesteps, stops counting if node dies
-        self.age += 1
+        self.ageDays += 1
 
         # start with an empty list of events
         stepEvents = []
@@ -41,7 +41,7 @@ cdef class node:
 
         # a precondition is not needed because infection is idempotent
         if random.random() < probabilities.SPONTANEOUS_INFECTION:
-            stepEvents.append(self.infection)
+            stepEvents.append(self.infect)
 
         # there can be as many events as needed
         if random.random() < probabilities.SPONTANEOUS_CLEARANCE:
@@ -53,6 +53,33 @@ cdef class node:
         # execute each event in the now-shuffled list..
         for event in stepEvents:
             # ...but stop early if the host dies
-            if self.dead:
+            if self.isDead:
                 return
             event()
+
+    # idempotent functions to heal, become infected, and die
+    cpdef heal(self):
+        self.isHealthy = True
+        
+    cpdef infect(self):
+        self.isHealthy = False
+
+    cpdef death(self):
+        self.isDead = True
+
+    # helper for edge interaction
+    cpdef willInfect(self):
+        # only infect if not healthy and rng meets the chance
+        return (not self.isHealthy) and random.random() < self.infectionChance 
+
+    # helpers for results
+    cpdef isLivingUnhealthy(self):
+        return (not self.isDead) and (not self.isHealthy)
+
+    cpdef isLivingHealthy(self):
+        return (not self.isDead) and (self.isHealthy)   
+
+        # cython doesnt allow direct exposure of object variables
+        # the function must be named differently than the variable
+    cpdef isDeadGet(self):
+        return self.isDead
