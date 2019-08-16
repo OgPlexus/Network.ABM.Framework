@@ -81,5 +81,5 @@ cdef class Node:
 
         # cython doesnt allow direct exposure of object variables
         # the function must be named differently than the variable
-    cpdef isDeadGet(self):
-        return self.isDead
+    cpdef isAlive(self):
+        return not self.isDead

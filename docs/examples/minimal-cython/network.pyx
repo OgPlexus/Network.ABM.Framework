@@ -33,7 +33,7 @@ cdef class Network:
         # count node stats
         healthyNodes   = sum(node.isLivingHealthy() for node in self.nodes)
         unhealthyNodes = sum(node.isLivingUnhealthy() for node in self.nodes)
-        deadNodes      = sum(node.isDeadGet() for node in self.nodes)
+        deadNodes      = sum((not node.isAlive()) for node in self.nodes)
         print("There are " + str(healthyNodes)  + " healthy (living) nodes.")
         print("There are " + str(unhealthyNodes)+ " unhealthy (living) nodes.")
         print("There are " + str(deadNodes)     + " dead nodes.")
@@ -57,7 +57,7 @@ cdef class Network:
             
         # edge events
         for edgeInd in range(len(self.edges)):
-            if random.random() < probabilities.EDGE_INTERACT:
+            if random.random() < probabilities.EDGE_INTERACT and self.liveEdge(edgeInd):
                 # append a tuple when the event takes arguments (all edge events)
                 dailyEvents.append( (self.edgeInteract, self.edges[edgeInd]) )
 
@@ -72,6 +72,10 @@ cdef class Network:
         # edge death must be done last because edge events rely on edge inde
 
 
+    # check if both ends of an edge are alive
+    def liveEdge(self, edgeInd):
+        inds = list(self.edges[edgeInd])
+        return self.nodes[inds[0]].isAlive() and self.nodes[inds[1]].isAlive()
             
     # create a new node and add it to the network
     cpdef nodeCreation(self):
